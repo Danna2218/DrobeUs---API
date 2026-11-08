@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const materiaRoutes = require('./routes/materiaRoutes');
@@ -10,6 +11,8 @@ const agendaRoutes = require('./routes/agendaRoutes');
 const notaRoutes = require('./routes/notaRoutes');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
 
@@ -35,6 +38,6 @@ app.use((err, req, res, next) => {
 });
 
 connectDB().then(() => {
-  app.listen(process.env.PORT, () =>
-    console.log(`Servidor en http://localhost:${process.env.PORT}`));
+  console.log('Base de datos en:', mongoose.connection.host);
+  app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
 });
