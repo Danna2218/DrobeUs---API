@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Usuario = require('../models/Usuario');
 
 // FUNCIONALIDAD 1: Registro
@@ -88,6 +89,49 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
+    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+  }
+};
+
+// FUNCIONALIDAD 11: Completar o editar perfil (PUT)
+exports.actualizarPerfil = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, institucion, carrera, periodoActual } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
+    }
+
+    const usuario = await Usuario.findById(id);
+    if (!usuario) {
+      return res.status(404).json({ ok: false, mensaje: 'El usuario no existe' });
+    }
+
+    if (nombre !== undefined) usuario.nombre = nombre;
+    if (institucion !== undefined) usuario.institucion = institucion;
+    if (carrera !== undefined) usuario.carrera = carrera;
+    if (periodoActual !== undefined) usuario.periodoActual = periodoActual;
+
+    await usuario.save();
+
+    res.status(200).json({
+      ok: true,
+      mensaje: 'Perfil actualizado correctamente',
+      usuario: {
+        id: usuario._id,
+        nombre: usuario.nombre,
+        correo: usuario.correo,
+        institucion: usuario.institucion,
+        carrera: usuario.carrera,
+        periodoActual: usuario.periodoActual
+      }
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const mensajes = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
+    }
     res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
   }
 };
