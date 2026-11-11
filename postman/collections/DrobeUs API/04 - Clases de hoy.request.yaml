@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/materias/hoy?usuario=6aceddf33147361d21772548&dia=jueves"
+url: "{{baseUrl}}/api/materias/hoy?usuario=6aceddf33147361d21772548&dia=lunes"
 method: GET
 queryParams:
   - key: usuario
@@ -7,7 +7,7 @@ queryParams:
     disabled: false
     description: ""
   - key: dia
-    value: jueves
+    value: lunes
     disabled: false
     description: ""
 order: 5000

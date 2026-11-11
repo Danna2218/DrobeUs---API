@@ -16,7 +16,7 @@ module.exports = (req, res, next) => {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.usuarioId = payload.id;
 
-    // El usuario sale SIEMPRE del token, sin importar lo que envíe el cliente
+    // El usuario sale SIEMPRE del token 
     Object.defineProperty(req, 'query', {
       value: { ...req.query, usuario: payload.id },
       writable: true,

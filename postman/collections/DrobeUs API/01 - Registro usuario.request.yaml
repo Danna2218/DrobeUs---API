@@ -5,11 +5,11 @@ body:
   type: json
   content: "{\r
 
-    \  \"nombre\": \"Zulema Leon\",\r
+    \  \"nombre\": \"Camilo Ruiz\",\r
 
-    \  \"correo\": \"zulema.leon.r@uniautonoma.edu.co\",\r
+    \  \"correo\": \"camilo.r@uniautonoma.edu.co\",\r
 
-    \  \"contrasena\": \"Z45autonoma\",\r
+    \  \"contrasena\": \"123456\",\r
 
     \  \"institucion\": \"Uniautónoma del Cauca\",\r
 

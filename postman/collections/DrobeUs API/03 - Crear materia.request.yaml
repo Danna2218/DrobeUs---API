@@ -5,9 +5,9 @@ body:
   type: json
   content: "{\r
 
-    \  \"usuario\": \"6aceddf33147361d21772548\",\r
+    \  \"usuario\": \"6af4a5063d98d6996a7cd8bd\",\r
 
-    \  \"nombre\": \"Matematicas\",\r
+    \  \"nombre\": \"Calculo\",\r
 
     \  \"profesor\": \"Prof. Adriana\",\r
 

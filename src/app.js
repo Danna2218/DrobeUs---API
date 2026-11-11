@@ -17,6 +17,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+const cors = require('cors');
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://TU-FRONTEND.onrender.com']
+}));
+
 // Endpoints
 app.get('/', (req, res) => res.json({ mensaje: 'API DrobeUs funcionando' }));
 app.use('/api/auth', authRoutes);

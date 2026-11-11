@@ -8,7 +8,7 @@ const refreshTokenSchema = new mongoose.Schema({
   reemplazadoPor: { type: String, default: null }
 }, { timestamps: true, collection: 'refreshtokens' });
 
-// Índice TTL: MongoDB elimina solo los tokens vencidos
+
 refreshTokenSchema.index({ expiraEn: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('RefreshToken', refreshTokenSchema);

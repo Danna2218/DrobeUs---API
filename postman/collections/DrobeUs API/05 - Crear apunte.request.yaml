@@ -5,9 +5,9 @@ body:
   type: json
   content: "{\r
 
-    \  \"usuario\": \"6aceddf33147361d21772548\",\r
+    \  \"usuario\": \"6af4a5063d98d6996a7cd8bd\",\r
 
-    \  \"materia\": \"6af3d4ee1c24ca11b80ee42d\",\r
+    \  \"materia\": \"6af4a56e3d98d6996a7cd8c0\",\r
 
     \  \"titulo\": \"Ecuaciones Lineales\",\r
 
