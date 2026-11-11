@@ -5,7 +5,7 @@ const manejarError = require('../utils/manejarError');
 
 const esId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// HU05: Crear apunte
+// HU 05 - Crear apunte
 exports.crearApunte = async (req, res) => {
   try {
     const { materia, titulo, tipo, contenido } = req.body;
@@ -32,7 +32,7 @@ exports.crearApunte = async (req, res) => {
   }
 };
 
-// HU20: Listar apuntes de una materia (con búsqueda por título)
+// HU 20 - Listar apuntes de una materia 
 exports.listarApuntes = async (req, res) => {
   try {
     const { materia, buscar } = req.query;
@@ -56,7 +56,7 @@ exports.listarApuntes = async (req, res) => {
   }
 };
 
-// HU21: Ver un apunte
+// HU 21 - Ver un apunte
 exports.obtenerApunte = async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,7 +71,7 @@ exports.obtenerApunte = async (req, res) => {
   }
 };
 
-// HU22: Editar un apunte
+// HU 22 - Editar un apunte
 exports.actualizarApunte = async (req, res) => {
   try {
     const { id } = req.params;
@@ -91,7 +91,7 @@ exports.actualizarApunte = async (req, res) => {
   }
 };
 
-// HU23: Eliminar un apunte
+// HU 23 - Eliminar un apunte
 exports.eliminarApunte = async (req, res) => {
   try {
     const { id } = req.params;

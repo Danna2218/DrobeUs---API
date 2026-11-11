@@ -6,7 +6,7 @@ const manejarError = require('../utils/manejarError');
 const esId = (id) => mongoose.Types.ObjectId.isValid(id);
 const redondear = (n) => Math.round(n * 100) / 100;
 
-// HU09: Registrar nota
+// HU 09 - Registrar nota
 exports.crearNota = async (req, res) => {
   try {
     const { materia, descripcion, valor, porcentaje } = req.body;
@@ -42,7 +42,7 @@ exports.crearNota = async (req, res) => {
   }
 };
 
-// HU10: Promedio ponderado del periodo y por materia
+// HU 10 - Promedio ponderado del periodo y por materia
 exports.promedio = async (req, res) => {
   try {
     const { periodo } = req.query;
@@ -89,7 +89,7 @@ exports.promedio = async (req, res) => {
   }
 };
 
-// HU29: Listar notas de una materia
+// HU 29 - Listar notas de una materia
 exports.listarNotas = async (req, res) => {
   try {
     const { materia } = req.query;
@@ -109,7 +109,7 @@ exports.listarNotas = async (req, res) => {
   }
 };
 
-// HU30: Editar una nota
+// HU 30 - Editar una nota
 exports.actualizarNota = async (req, res) => {
   try {
     const { id } = req.params;
@@ -137,7 +137,7 @@ exports.actualizarNota = async (req, res) => {
   }
 };
 
-// HU31: Eliminar una nota
+// HU 31 - Eliminar una nota
 exports.eliminarNota = async (req, res) => {
   try {
     const { id } = req.params;

@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-//Endpoints
+// Endpoints
 app.get('/', (req, res) => res.json({ mensaje: 'API DrobeUs funcionando' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/materias', verificarToken, materiaRoutes);

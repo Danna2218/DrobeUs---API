@@ -42,7 +42,7 @@ const datosUsuario = (u) => ({
   periodoActual: u.periodoActual
 });
 
-// HU01: Registro
+// HU 01 - Registro
 exports.registro = async (req, res) => {
   try {
     const { nombre, correo, contrasena, institucion, carrera } = req.body;
@@ -73,7 +73,7 @@ exports.registro = async (req, res) => {
   }
 };
 
-// HU02: Login
+// HU 02 - Login
 exports.login = async (req, res) => {
   try {
     const { correo, contrasena } = req.body;
@@ -104,7 +104,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// HU11: Completar o editar perfil
+// HU 11 - Completar o editar perfil
 exports.actualizarPerfil = async (req, res) => {
   try {
     const { id } = req.params;
@@ -138,7 +138,7 @@ exports.actualizarPerfil = async (req, res) => {
   }
 };
 
-// HU16: Renovar tokens con rotación del refresh token
+// HU 16 - Renovar tokens con rotación del refresh token
 exports.refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -158,7 +158,7 @@ exports.refresh = async (req, res) => {
       return res.status(401).json({ ok: false, mensaje: 'Refresh token no reconocido' });
     }
 
-    // Reutilización de un token ya rotado: se asume robo y se cierran todas las sesiones
+    // Reutilización de un token ya rotado
     if (guardado.revocado) {
       await RefreshToken.updateMany(
         { usuario: guardado.usuario, revocado: false },
@@ -175,7 +175,7 @@ exports.refresh = async (req, res) => {
       return res.status(401).json({ ok: false, mensaje: 'El usuario no existe' });
     }
 
-    // Rotación: se invalida el token viejo y se emite uno nuevo
+    // Se invalida el token viejo y se emite uno nuevo (rotar)
     const nuevoRefresh = await crearRefreshToken(usuario._id);
     guardado.revocado = true;
     guardado.reemplazadoPor = hashToken(nuevoRefresh);
@@ -192,7 +192,7 @@ exports.refresh = async (req, res) => {
   }
 };
 
-// HU17: Cerrar sesión
+// HU 17 - Cerrar sesión
 exports.logout = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -208,7 +208,7 @@ exports.logout = async (req, res) => {
   }
 };
 
-// HU18: Ver mi perfil
+// HU 18 -Ver mi perfil
 exports.miPerfil = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.usuarioId);
@@ -221,7 +221,7 @@ exports.miPerfil = async (req, res) => {
   }
 };
 
-// HU19: Eliminar mi cuenta y todos mis datos
+// HU 19 - Eliminar mi cuenta y todos mis datos
 exports.eliminarCuenta = async (req, res) => {
   try {
     const { contrasena } = req.body;

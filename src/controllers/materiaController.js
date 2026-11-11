@@ -8,7 +8,7 @@ const manejarError = require('../utils/manejarError');
 const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 const esId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// HU03: Crear materia
+// HU 03 - Crear materia
 exports.crearMateria = async (req, res) => {
   try {
     const { nombre, profesor, aula, color, periodo, horario } = req.body;
@@ -27,7 +27,7 @@ exports.crearMateria = async (req, res) => {
   }
 };
 
-// HU35: Cargar horario (crear varias materias de una vez)
+// HU 35 - Cargar horario (crear varias materias de una vez)
 exports.crearMateriasLote = async (req, res) => {
   try {
     const { periodo, materias } = req.body;
@@ -59,7 +59,7 @@ exports.crearMateriasLote = async (req, res) => {
   }
 };
 
-// HU04: Clases de hoy, ordenadas por hora
+// HU 04 - Clases de hoy, ordenadas por hora
 exports.clasesHoy = async (req, res) => {
   try {
     const diaBuscado = (req.query.dia || DIAS[new Date().getDay()]).toLowerCase();
@@ -98,7 +98,7 @@ exports.clasesHoy = async (req, res) => {
   }
 };
 
-// HU12: Listar materias con total de apuntes y tareas
+// HU 12 - Listar materias con total de apuntes y tareas
 exports.listarMaterias = async (req, res) => {
   try {
     const filtro = { usuario: req.usuarioId };
@@ -130,7 +130,7 @@ exports.listarMaterias = async (req, res) => {
   }
 };
 
-// HU13: Ver una materia
+// HU 13 - Ver una materia
 exports.obtenerMateria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -145,7 +145,7 @@ exports.obtenerMateria = async (req, res) => {
   }
 };
 
-// HU14: Editar una materia
+// HU 14 - Editar una materia
 exports.actualizarMateria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -165,7 +165,7 @@ exports.actualizarMateria = async (req, res) => {
   }
 };
 
-// HU15: Eliminar una materia y todo lo que depende de ella
+// HU 15 - Eliminar una materia y todo lo que depende de ella
 exports.eliminarMateria = async (req, res) => {
   try {
     const { id } = req.params;

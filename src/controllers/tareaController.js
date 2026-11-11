@@ -13,7 +13,7 @@ const textoFalta = (dias) => {
   return `En ${dias} días`;
 };
 
-// HU06: Crear tarea
+// HU 06 - Crear tarea
 exports.crearTarea = async (req, res) => {
   try {
     const { materia, titulo, tipo, fechaEntrega } = req.body;
@@ -43,7 +43,7 @@ exports.crearTarea = async (req, res) => {
   }
 };
 
-// HU07: Tareas pendientes con días restantes
+// HU 07 - Tareas pendientes con días restantes
 exports.tareasPendientes = async (req, res) => {
   try {
     const hoy = new Date();
@@ -78,7 +78,7 @@ exports.tareasPendientes = async (req, res) => {
   }
 };
 
-// HU24: Listar tareas de una materia (filtro opcional por estado)
+// HU 24 - Listar tareas de una materia 
 exports.listarTareas = async (req, res) => {
   try {
     const { materia, estado } = req.query;
@@ -99,7 +99,7 @@ exports.listarTareas = async (req, res) => {
   }
 };
 
-// HU25: Ver una tarea
+// HU 25 - Ver una tarea
 exports.obtenerTarea = async (req, res) => {
   try {
     const { id } = req.params;
@@ -114,7 +114,7 @@ exports.obtenerTarea = async (req, res) => {
   }
 };
 
-// HU26: Editar una tarea
+// HU 26 - Editar una tarea
 exports.actualizarTarea = async (req, res) => {
   try {
     const { id } = req.params;
@@ -134,7 +134,7 @@ exports.actualizarTarea = async (req, res) => {
   }
 };
 
-// HU27: Marcar una tarea como entregada
+// HU 27 - Marcar una tarea como entregada
 exports.entregarTarea = async (req, res) => {
   try {
     const { id } = req.params;
@@ -157,7 +157,7 @@ exports.entregarTarea = async (req, res) => {
   }
 };
 
-// HU28: Eliminar una tarea
+// HU 28 - Eliminar una tarea
 exports.eliminarTarea = async (req, res) => {
   try {
     const { id } = req.params;

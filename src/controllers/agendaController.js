@@ -12,7 +12,7 @@ const materiasPorId = async (usuarioId) => {
   return porId;
 };
 
-// HU08: Agenda de la semana (lunes a domingo)
+// HU 08 - Agenda
 exports.semana = async (req, res) => {
   try {
     const fechaTexto = req.query.fecha || new Date().toISOString().slice(0, 10);
@@ -66,7 +66,7 @@ exports.semana = async (req, res) => {
   }
 };
 
-// HU36: Recordatorios de estudio para entregas y parciales próximos
+// HU 36 - Recordatorios de entregas próximas
 exports.recordatorios = async (req, res) => {
   try {
     const dias = parseInt(req.query.dias, 10) || 3;
