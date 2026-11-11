@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   crearMateria,
+  crearMateriasLote,
   clasesHoy,
   listarMaterias,
   obtenerMateria,
@@ -10,6 +11,7 @@ const {
 } = require('../controllers/materiaController');
 
 router.post('/', crearMateria);
+router.post('/lote', crearMateriasLote);
 router.get('/hoy', clasesHoy);
 router.get('/', listarMaterias);
 router.get('/:id', obtenerMateria);

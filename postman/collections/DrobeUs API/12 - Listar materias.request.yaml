@@ -4,4 +4,7 @@ method: GET
 queryParams:
   usuario: 6aceddf33147361d21772548
   periodo: 2026-2
+body:
+  type: json
+  content: ""
 order: 13000

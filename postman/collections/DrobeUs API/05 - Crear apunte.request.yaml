@@ -7,13 +7,13 @@ body:
 
     \  \"usuario\": \"6aceddf33147361d21772548\",\r
 
-    \  \"materia\": \"6acee2a7650fa3dd90b69179\",\r
+    \  \"materia\": \"6af3d4ee1c24ca11b80ee42d\",\r
 
-    \  \"titulo\": \"Límites y continuidad\",\r
+    \  \"titulo\": \"Ecuaciones Lineales\",\r
 
     \  \"tipo\": \"texto\",\r
 
-    \  \"contenido\": \"Un límite describe el valor al que se acerca f(x) cuando x se acerca a un punto.\"\r
+    \  \"contenido\": \"\"\r
 
-    }"
+    }\r\n"
 order: 6000

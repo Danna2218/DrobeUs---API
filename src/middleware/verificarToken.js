@@ -15,6 +15,16 @@ module.exports = (req, res, next) => {
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.usuarioId = payload.id;
+
+    // El usuario sale SIEMPRE del token, sin importar lo que envíe el cliente
+    Object.defineProperty(req, 'query', {
+      value: { ...req.query, usuario: payload.id },
+      writable: true,
+      configurable: true,
+      enumerable: true
+    });
+    if (req.body && typeof req.body === 'object') req.body.usuario = payload.id;
+
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

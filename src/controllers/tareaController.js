@@ -1,108 +1,173 @@
 const mongoose = require('mongoose');
 const Tarea = require('../models/Tarea');
 const Materia = require('../models/Materia');
+const manejarError = require('../utils/manejarError');
+const { filtroEstado, marcarEntregada } = require('../utils/tareaEstado');
 
-// FUNCIONALIDAD 6: Crear tarea / parcial / informe
+const esId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const textoFalta = (dias) => {
+  if (dias < 0) return `Vencida hace ${Math.abs(dias)} día(s)`;
+  if (dias === 0) return 'Hoy';
+  if (dias === 1) return 'Mañana';
+  return `En ${dias} días`;
+};
+
+// HU06: Crear tarea
 exports.crearTarea = async (req, res) => {
   try {
-    const { usuario, materia, titulo, tipo, fechaEntrega } = req.body;
+    const { materia, titulo, tipo, fechaEntrega } = req.body;
 
-    if (!usuario || !materia || !titulo || !fechaEntrega) {
+    if (!materia || !titulo || !fechaEntrega) {
       return res.status(400).json({
         ok: false,
-        mensaje: 'Usuario, materia, título y fecha de entrega son obligatorios'
+        mensaje: 'La materia, el título y la fecha de entrega son obligatorios'
       });
     }
-
-    if (!mongoose.Types.ObjectId.isValid(usuario) || !mongoose.Types.ObjectId.isValid(materia)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario o materia inválido' });
+    if (!esId(materia)) {
+      return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
     }
 
-    if (isNaN(new Date(fechaEntrega).getTime())) {
-      return res.status(400).json({
-        ok: false,
-        mensaje: 'Fecha inválida. Usa el formato AAAA-MM-DD (ejemplo: 2026-10-20)'
-      });
-    }
-
-    const existeMateria = await Materia.findById(materia);
+    const existeMateria = await Materia.findOne({ _id: materia, usuario: req.usuarioId });
     if (!existeMateria) {
       return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
     }
 
-    if (existeMateria.usuario.toString() !== usuario) {
-      return res.status(400).json({
-        ok: false,
-        mensaje: 'La materia no pertenece a este usuario'
-      });
-    }
-
-    const tarea = await Tarea.create({ usuario, materia, titulo, tipo, fechaEntrega });
-
-    res.status(201).json({
-      ok: true,
-      mensaje: 'Tarea registrada correctamente',
-      tarea
+    const tarea = await Tarea.create({
+      usuario: req.usuarioId, materia, titulo, tipo, fechaEntrega
     });
+
+    res.status(201).json({ ok: true, mensaje: 'Tarea creada correctamente', tarea });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const mensajes = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
-    }
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 7: Entregas pendientes con días restantes
+// HU07: Tareas pendientes con días restantes
 exports.tareasPendientes = async (req, res) => {
   try {
-    const { usuario } = req.query;
+    const hoy = new Date();
+    hoy.setUTCHours(0, 0, 0, 0);
 
-    if (!usuario) {
-      return res.status(400).json({ ok: false, mensaje: 'El parámetro usuario es obligatorio' });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(usuario)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
-    }
-
-    const tareas = await Tarea.find({ usuario, completada: false })
-      .populate('materia', 'nombre color')
+    const tareas = await Tarea
+      .find({ usuario: req.usuarioId, ...filtroEstado('pendiente') })
       .sort({ fechaEntrega: 1 });
 
-    const MS_DIA = 1000 * 60 * 60 * 24;
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const materias = await Materia.find({ usuario: req.usuarioId });
+    const porId = {};
+    materias.forEach((m) => { porId[String(m._id)] = m; });
 
-    const pendientes = tareas.map(t => {
-      const entrega = new Date(t.fechaEntrega);
-      entrega.setHours(0, 0, 0, 0);
-      const dias = Math.round((entrega - hoy) / MS_DIA);
-
-      let textoFalta;
-      if (dias < 0) textoFalta = `Vencida hace ${Math.abs(dias)} día(s)`;
-      else if (dias === 0) textoFalta = 'Hoy';
-      else if (dias === 1) textoFalta = 'Mañana';
-      else textoFalta = `En ${dias} días`;
-
+    const pendientes = tareas.map((t) => {
+      const m = porId[String(t.materia)];
+      const diasRestantes = Math.round((new Date(t.fechaEntrega) - hoy) / 86400000);
       return {
         id: t._id,
         titulo: t.titulo,
         tipo: t.tipo,
-        materia: t.materia ? t.materia.nombre : null,
-        color: t.materia ? t.materia.color : null,
+        materia: m ? m.nombre : null,
+        color: m ? m.color : null,
         fechaEntrega: t.fechaEntrega,
-        diasRestantes: dias,
-        falta: textoFalta
+        diasRestantes,
+        falta: textoFalta(diasRestantes)
       };
     });
 
-    res.status(200).json({
-      ok: true,
-      total: pendientes.length,
-      pendientes
-    });
+    res.status(200).json({ ok: true, total: pendientes.length, pendientes });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
+  }
+};
+
+// HU24: Listar tareas de una materia (filtro opcional por estado)
+exports.listarTareas = async (req, res) => {
+  try {
+    const { materia, estado } = req.query;
+    const filtro = { usuario: req.usuarioId };
+
+    if (materia) {
+      if (!esId(materia)) {
+        return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
+      }
+      filtro.materia = materia;
+    }
+    if (estado) Object.assign(filtro, filtroEstado(estado));
+
+    const tareas = await Tarea.find(filtro).sort({ fechaEntrega: 1 });
+    res.status(200).json({ ok: true, total: tareas.length, tareas });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU25: Ver una tarea
+exports.obtenerTarea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de tarea inválido' });
+
+    const tarea = await Tarea.findOne({ _id: id, usuario: req.usuarioId });
+    if (!tarea) return res.status(404).json({ ok: false, mensaje: 'La tarea no existe' });
+
+    res.status(200).json({ ok: true, tarea });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU26: Editar una tarea
+exports.actualizarTarea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de tarea inválido' });
+
+    const tarea = await Tarea.findOne({ _id: id, usuario: req.usuarioId });
+    if (!tarea) return res.status(404).json({ ok: false, mensaje: 'La tarea no existe' });
+
+    ['titulo', 'tipo', 'fechaEntrega'].forEach((c) => {
+      if (req.body[c] !== undefined) tarea[c] = req.body[c];
+    });
+    await tarea.save();
+
+    res.status(200).json({ ok: true, mensaje: 'Tarea actualizada correctamente', tarea });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU27: Marcar una tarea como entregada
+exports.entregarTarea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de tarea inválido' });
+
+    const tarea = await Tarea.findOne({ _id: id, usuario: req.usuarioId });
+    if (!tarea) return res.status(404).json({ ok: false, mensaje: 'La tarea no existe' });
+
+    if (!marcarEntregada(tarea)) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'El modelo Tarea no tiene un campo de estado (entregada, completada, estado o hecha)'
+      });
+    }
+    await tarea.save();
+
+    res.status(200).json({ ok: true, mensaje: 'Tarea marcada como entregada', tarea });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU28: Eliminar una tarea
+exports.eliminarTarea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de tarea inválido' });
+
+    const tarea = await Tarea.findOneAndDelete({ _id: id, usuario: req.usuarioId });
+    if (!tarea) return res.status(404).json({ ok: false, mensaje: 'La tarea no existe' });
+
+    res.status(200).json({ ok: true, mensaje: 'Tarea eliminada correctamente' });
+  } catch (error) {
+    manejarError(res, error);
   }
 };

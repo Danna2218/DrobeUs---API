@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/apuntes?materia=6af3d4ee1c24ca11b80ee42d"
+method: GET
+queryParams:
+  materia: 6af3d4ee1c24ca11b80ee42d
+scripts:
+  - type: afterResponse
+    code: pm.test('Responde 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 21000

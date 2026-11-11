@@ -1,137 +1,153 @@
 const mongoose = require('mongoose');
 const Nota = require('../models/Nota');
 const Materia = require('../models/Materia');
+const manejarError = require('../utils/manejarError');
 
-// FUNCIONALIDAD 9: Registrar nota
+const esId = (id) => mongoose.Types.ObjectId.isValid(id);
+const redondear = (n) => Math.round(n * 100) / 100;
+
+// HU09: Registrar nota
 exports.crearNota = async (req, res) => {
   try {
-    const { usuario, materia, descripcion, valor, porcentaje } = req.body;
+    const { materia, descripcion, valor, porcentaje } = req.body;
 
-    if (!usuario || !materia || valor === undefined || valor === null || valor === '') {
+    if (!materia || !descripcion || valor === undefined) {
       return res.status(400).json({
         ok: false,
-        mensaje: 'Usuario, materia y valor son obligatorios'
+        mensaje: 'La materia, la descripción y el valor son obligatorios'
       });
     }
-
-    if (!mongoose.Types.ObjectId.isValid(usuario) || !mongoose.Types.ObjectId.isValid(materia)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario o materia inválido' });
+    if (!esId(materia)) {
+      return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
     }
-
     if (typeof valor !== 'number' || valor < 0 || valor > 5) {
-      return res.status(400).json({
-        ok: false,
-        mensaje: 'El valor debe ser un número entre 0 y 5'
-      });
+      return res.status(400).json({ ok: false, mensaje: 'El valor debe ser un número entre 0 y 5' });
+    }
+    if (porcentaje !== undefined && (typeof porcentaje !== 'number' || porcentaje < 0 || porcentaje > 100)) {
+      return res.status(400).json({ ok: false, mensaje: 'El porcentaje debe estar entre 0 y 100' });
     }
 
-    const existeMateria = await Materia.findById(materia);
+    const existeMateria = await Materia.findOne({ _id: materia, usuario: req.usuarioId });
     if (!existeMateria) {
       return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
     }
 
-    if (existeMateria.usuario.toString() !== usuario) {
-      return res.status(400).json({
-        ok: false,
-        mensaje: 'La materia no pertenece a este usuario'
-      });
-    }
-
-    // Regla de negocio: los porcentajes de una materia no pueden superar 100%
-    if (porcentaje) {
-      const acumulado = await Nota.aggregate([
-        { $match: { materia: existeMateria._id } },
-        { $group: { _id: null, total: { $sum: '$porcentaje' } } }
-      ]);
-      const yaUsado = acumulado.length ? acumulado[0].total : 0;
-      if (yaUsado + porcentaje > 100) {
-        return res.status(400).json({
-          ok: false,
-          mensaje: `Los porcentajes superan el 100%. Ya tienes ${yaUsado}% registrado en esta materia`
-        });
-      }
-    }
-
-    const nota = await Nota.create({ usuario, materia, descripcion, valor, porcentaje });
-
-    res.status(201).json({
-      ok: true,
-      mensaje: `Nota registrada en ${existeMateria.nombre}`,
-      nota
+    const nota = await Nota.create({
+      usuario: req.usuarioId, materia, descripcion, valor, porcentaje
     });
+
+    res.status(201).json({ ok: true, mensaje: 'Nota registrada correctamente', nota });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const mensajes = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
-    }
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 10: Promedio por materia y del periodo
+// HU10: Promedio ponderado del periodo y por materia
 exports.promedio = async (req, res) => {
   try {
-    const { usuario, periodo } = req.query;
+    const { periodo } = req.query;
+    const filtroMaterias = { usuario: req.usuarioId };
+    if (periodo) filtroMaterias.periodo = periodo;
 
-    if (!usuario) {
-      return res.status(400).json({ ok: false, mensaje: 'El parámetro usuario es obligatorio' });
-    }
+    const materias = await Materia.find(filtroMaterias).sort({ nombre: 1 });
+    const ids = materias.map((m) => m._id);
+    const notas = await Nota.find({ usuario: req.usuarioId, materia: { $in: ids } });
 
-    if (!mongoose.Types.ObjectId.isValid(usuario)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
-    }
+    const porMateria = {};
+    notas.forEach((n) => {
+      const k = String(n.materia);
+      (porMateria[k] = porMateria[k] || []).push(n);
+    });
 
-    const filtroMateria = { usuario };
-    if (periodo) filtroMateria.periodo = periodo;
-
-    const materias = await Materia.find(filtroMateria);
-
-    if (materias.length === 0) {
-      return res.status(404).json({
-        ok: false,
-        mensaje: 'No hay materias para ese usuario y periodo'
-      });
-    }
-
-    const resultado = [];
-    for (const m of materias) {
-      const notas = await Nota.find({ materia: m._id });
-
-      let promedio = null;
-      if (notas.length > 0) {
-        const totalPorcentaje = notas.reduce((s, n) => s + (n.porcentaje || 0), 0);
-        if (totalPorcentaje > 0) {
-          // Promedio ponderado por porcentaje
-          const suma = notas.reduce((s, n) => s + n.valor * (n.porcentaje || 0), 0);
-          promedio = suma / totalPorcentaje;
-        } else {
-          // Sin porcentajes: promedio simple
-          promedio = notas.reduce((s, n) => s + n.valor, 0) / notas.length;
-        }
-        promedio = Math.round(promedio * 10) / 10;
-      }
-
-      resultado.push({
+    const resultado = materias.map((m) => {
+      const lista = porMateria[String(m._id)] || [];
+      const sumaPorcentaje = lista.reduce((a, n) => a + (n.porcentaje || 0), 0);
+      const ponderado = lista.reduce((a, n) => a + n.valor * (n.porcentaje || 0), 0);
+      return {
         materiaId: m._id,
         materia: m.nombre,
         color: m.color,
-        notasRegistradas: notas.length,
-        promedio
-      });
-    }
+        totalNotas: lista.length,
+        porcentajeEvaluado: sumaPorcentaje,
+        promedio: sumaPorcentaje > 0 ? redondear(ponderado / sumaPorcentaje) : null
+      };
+    });
 
-    const conNotas = resultado.filter(r => r.promedio !== null);
-    const promedioPeriodo = conNotas.length
-      ? Math.round((conNotas.reduce((s, r) => s + r.promedio, 0) / conNotas.length) * 10) / 10
+    const conNota = resultado.filter((r) => r.promedio !== null);
+    const promedioPeriodo = conNota.length
+      ? redondear(conNota.reduce((a, r) => a + r.promedio, 0) / conNota.length)
       : null;
 
     res.status(200).json({
       ok: true,
-      periodo: periodo || 'todos',
+      periodo: periodo || null,
       promedioPeriodo,
       materias: resultado
     });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
+  }
+};
+
+// HU29: Listar notas de una materia
+exports.listarNotas = async (req, res) => {
+  try {
+    const { materia } = req.query;
+    const filtro = { usuario: req.usuarioId };
+
+    if (materia) {
+      if (!esId(materia)) {
+        return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
+      }
+      filtro.materia = materia;
+    }
+
+    const notas = await Nota.find(filtro).sort({ createdAt: 1 });
+    res.status(200).json({ ok: true, total: notas.length, notas });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU30: Editar una nota
+exports.actualizarNota = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de nota inválido' });
+
+    const { valor, porcentaje } = req.body;
+    if (valor !== undefined && (typeof valor !== 'number' || valor < 0 || valor > 5)) {
+      return res.status(400).json({ ok: false, mensaje: 'El valor debe ser un número entre 0 y 5' });
+    }
+    if (porcentaje !== undefined && (typeof porcentaje !== 'number' || porcentaje < 0 || porcentaje > 100)) {
+      return res.status(400).json({ ok: false, mensaje: 'El porcentaje debe estar entre 0 y 100' });
+    }
+
+    const nota = await Nota.findOne({ _id: id, usuario: req.usuarioId });
+    if (!nota) return res.status(404).json({ ok: false, mensaje: 'La nota no existe' });
+
+    ['descripcion', 'valor', 'porcentaje'].forEach((c) => {
+      if (req.body[c] !== undefined) nota[c] = req.body[c];
+    });
+    await nota.save();
+
+    res.status(200).json({ ok: true, mensaje: 'Nota actualizada correctamente', nota });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU31: Eliminar una nota
+exports.eliminarNota = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de nota inválido' });
+
+    const nota = await Nota.findOneAndDelete({ _id: id, usuario: req.usuarioId });
+    if (!nota) return res.status(404).json({ ok: false, mensaje: 'La nota no existe' });
+
+    res.status(200).json({ ok: true, mensaje: 'Nota eliminada correctamente' });
+  } catch (error) {
+    manejarError(res, error);
   }
 };

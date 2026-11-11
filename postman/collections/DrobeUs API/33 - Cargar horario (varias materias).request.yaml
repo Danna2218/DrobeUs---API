@@ -1,0 +1,49 @@
+$kind: http-request
+url: "{{baseUrl}}/api/materias/lote"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "periodo": "2026-2",
+      "materias": [
+        {
+          "nombre": "Cálculo II",
+          "profesor": "Prof. Martínez",
+          "aula": "Aula 204",
+          "color": "#FF4FA3",
+          "horario": [
+            {
+              "dia": "lunes",
+              "horaInicio": "07:00",
+              "horaFin": "09:00"
+            },
+            {
+              "dia": "miercoles",
+              "horaInicio": "07:00",
+              "horaFin": "09:00"
+            }
+          ]
+        },
+        {
+          "nombre": "Programación",
+          "profesor": "Prof. Gómez",
+          "aula": "Lab 3",
+          "color": "#38BDF8",
+          "horario": [
+            {
+              "dia": "lunes",
+              "horaInicio": "09:00",
+              "horaFin": "11:00"
+            }
+          ]
+        }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Responde 201', () => pm.response.to.have.status(201));
+    language: text/javascript
+order: 34000

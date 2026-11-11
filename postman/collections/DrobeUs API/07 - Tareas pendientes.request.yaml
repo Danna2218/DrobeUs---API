@@ -3,4 +3,7 @@ url: "{{baseUrl}}/api/tareas/pendientes?usuario=6aceddf33147361d21772548"
 method: GET
 queryParams:
   usuario: 6aceddf33147361d21772548
+body:
+  type: json
+  content: ""
 order: 8000

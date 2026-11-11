@@ -1,66 +1,68 @@
 const mongoose = require('mongoose');
 const Materia = require('../models/Materia');
-const Usuario = require('../models/Usuario');
 const Apunte = require('../models/Apunte');
 const Tarea = require('../models/Tarea');
 const Nota = require('../models/Nota');
+const manejarError = require('../utils/manejarError');
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+const esId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// FUNCIONALIDAD 3: Crear materia
+// HU03: Crear materia
 exports.crearMateria = async (req, res) => {
   try {
-    const { usuario, nombre, profesor, aula, color, periodo, horario } = req.body;
+    const { nombre, profesor, aula, color, periodo, horario } = req.body;
 
-    if (!usuario || !nombre) {
-      return res.status(400).json({
-        ok: false,
-        mensaje: 'El usuario y el nombre de la materia son obligatorios'
-      });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(usuario)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
-    }
-
-    const existeUsuario = await Usuario.findById(usuario);
-    if (!existeUsuario) {
-      return res.status(404).json({ ok: false, mensaje: 'El usuario no existe' });
+    if (!nombre) {
+      return res.status(400).json({ ok: false, mensaje: 'El nombre de la materia es obligatorio' });
     }
 
     const materia = await Materia.create({
-      usuario, nombre, profesor, aula, color, periodo, horario
+      usuario: req.usuarioId, nombre, profesor, aula, color, periodo, horario
     });
 
-    res.status(201).json({
-      ok: true,
-      mensaje: 'Materia creada correctamente',
-      materia
-    });
+    res.status(201).json({ ok: true, mensaje: 'Materia creada correctamente', materia });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const mensajes = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
-    }
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 4: Clases de hoy, ordenadas por hora
+// HU35: Cargar horario (crear varias materias de una vez)
+exports.crearMateriasLote = async (req, res) => {
+  try {
+    const { periodo, materias } = req.body;
+
+    if (!Array.isArray(materias) || materias.length === 0) {
+      return res.status(400).json({ ok: false, mensaje: 'Envía una lista de materias' });
+    }
+
+    const docs = materias.map((m) => ({
+      usuario: req.usuarioId,
+      nombre: m.nombre,
+      profesor: m.profesor,
+      aula: m.aula,
+      color: m.color,
+      periodo: m.periodo || periodo,
+      horario: m.horario
+    }));
+
+    const creadas = await Materia.insertMany(docs);
+
+    res.status(201).json({
+      ok: true,
+      mensaje: `${creadas.length} materias creadas correctamente`,
+      total: creadas.length,
+      materias: creadas
+    });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU04: Clases de hoy, ordenadas por hora
 exports.clasesHoy = async (req, res) => {
   try {
-    const { usuario, dia } = req.query;
-
-    if (!usuario) {
-      return res.status(400).json({ ok: false, mensaje: 'El parámetro usuario es obligatorio' });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(usuario)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
-    }
-
-    // Si no se manda "dia", se usa el día actual del servidor
-    const diaBuscado = (dia || DIAS[new Date().getDay()]).toLowerCase();
+    const diaBuscado = (req.query.dia || DIAS[new Date().getDay()]).toLowerCase();
 
     if (!DIAS.includes(diaBuscado)) {
       return res.status(400).json({
@@ -69,16 +71,13 @@ exports.clasesHoy = async (req, res) => {
       });
     }
 
-    const materias = await Materia.find({
-      usuario,
-      'horario.dia': diaBuscado
-    });
+    const materias = await Materia.find({ usuario: req.usuarioId, 'horario.dia': diaBuscado });
 
     const clases = [];
-    materias.forEach(m => {
+    materias.forEach((m) => {
       m.horario
-        .filter(h => h.dia === diaBuscado)
-        .forEach(h => {
+        .filter((h) => h.dia === diaBuscado)
+        .forEach((h) => {
           clases.push({
             materiaId: m._id,
             materia: m.nombre,
@@ -93,32 +92,17 @@ exports.clasesHoy = async (req, res) => {
 
     clases.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
 
-    res.status(200).json({
-      ok: true,
-      dia: diaBuscado,
-      total: clases.length,
-      clases
-    });
+    res.status(200).json({ ok: true, dia: diaBuscado, total: clases.length, clases });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-
-// FUNCIONALIDAD 12: Listar materias del usuario (con conteo de apuntes y tareas)
+// HU12: Listar materias con total de apuntes y tareas
 exports.listarMaterias = async (req, res) => {
   try {
-    const { usuario, periodo } = req.query;
-
-    if (!usuario) {
-      return res.status(400).json({ ok: false, mensaje: 'El parámetro usuario es obligatorio' });
-    }
-    if (!mongoose.Types.ObjectId.isValid(usuario)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
-    }
-
-    const filtro = { usuario };
-    if (periodo) filtro.periodo = periodo;
+    const filtro = { usuario: req.usuarioId };
+    if (req.query.periodo) filtro.periodo = req.query.periodo;
 
     const materias = await Materia.find(filtro).sort({ nombre: 1 });
 
@@ -142,76 +126,53 @@ exports.listarMaterias = async (req, res) => {
 
     res.status(200).json({ ok: true, total: lista.length, materias: lista });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 13: Ver una materia
+// HU13: Ver una materia
 exports.obtenerMateria = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
-    }
-    const materia = await Materia.findById(id);
-    if (!materia) {
-      return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
-    }
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
+
+    const materia = await Materia.findOne({ _id: id, usuario: req.usuarioId });
+    if (!materia) return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
+
     res.status(200).json({ ok: true, materia });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 14: Editar materia (PUT)
+// HU14: Editar una materia
 exports.actualizarMateria = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
-    }
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
 
-    const materia = await Materia.findById(id);
-    if (!materia) {
-      return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
-    }
+    const materia = await Materia.findOne({ _id: id, usuario: req.usuarioId });
+    if (!materia) return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
 
-    const { nombre, profesor, aula, color, periodo, horario } = req.body;
-    if (nombre !== undefined) materia.nombre = nombre;
-    if (profesor !== undefined) materia.profesor = profesor;
-    if (aula !== undefined) materia.aula = aula;
-    if (color !== undefined) materia.color = color;
-    if (periodo !== undefined) materia.periodo = periodo;
-    if (horario !== undefined) materia.horario = horario;
-
+    ['nombre', 'profesor', 'aula', 'color', 'periodo', 'horario'].forEach((c) => {
+      if (req.body[c] !== undefined) materia[c] = req.body[c];
+    });
     await materia.save();
 
-    res.status(200).json({
-      ok: true,
-      mensaje: 'Materia actualizada correctamente',
-      materia
-    });
+    res.status(200).json({ ok: true, mensaje: 'Materia actualizada correctamente', materia });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const mensajes = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
-    }
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 15: Eliminar materia (DELETE) y todo lo que depende de ella
+// HU15: Eliminar una materia y todo lo que depende de ella
 exports.eliminarMateria = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
-    }
+    if (!esId(id)) return res.status(400).json({ ok: false, mensaje: 'ID de materia inválido' });
 
-    const materia = await Materia.findById(id);
-    if (!materia) {
-      return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
-    }
+    const materia = await Materia.findOne({ _id: id, usuario: req.usuarioId });
+    if (!materia) return res.status(404).json({ ok: false, mensaje: 'La materia no existe' });
 
     await Promise.all([
       Apunte.deleteMany({ materia: id }),
@@ -225,6 +186,6 @@ exports.eliminarMateria = async (req, res) => {
       mensaje: 'Materia eliminada junto con sus apuntes, tareas y notas'
     });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };

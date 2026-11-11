@@ -3,13 +3,16 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Usuario = require('../models/Usuario');
 const RefreshToken = require('../models/RefreshToken');
+const Materia = require('../models/Materia');
+const Apunte = require('../models/Apunte');
+const Tarea = require('../models/Tarea');
+const Nota = require('../models/Nota');
+const manejarError = require('../utils/manejarError');
 
 const ACCESS_EXPIRA = '15m';
 const REFRESH_DIAS = 7;
 
 // ---------- Funciones auxiliares de tokens ----------
-
-// Al refresh token se le guarda solo su hash (SHA-256), nunca el token en claro
 const hashToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
 
@@ -17,23 +20,29 @@ const crearAccessToken = (usuario) =>
   jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: ACCESS_EXPIRA });
 
 const crearRefreshToken = async (usuarioId) => {
-  // jti aleatorio: garantiza que cada refresh token sea único
   const token = jwt.sign(
     { id: usuarioId, jti: crypto.randomBytes(16).toString('hex') },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: `${REFRESH_DIAS}d` }
   );
-
   await RefreshToken.create({
     usuario: usuarioId,
     tokenHash: hashToken(token),
     expiraEn: new Date(Date.now() + REFRESH_DIAS * 24 * 60 * 60 * 1000)
   });
-
   return token;
 };
 
-// FUNCIONALIDAD 1: Registro
+const datosUsuario = (u) => ({
+  id: u._id,
+  nombre: u.nombre,
+  correo: u.correo,
+  institucion: u.institucion,
+  carrera: u.carrera,
+  periodoActual: u.periodoActual
+});
+
+// HU01: Registro
 exports.registro = async (req, res) => {
   try {
     const { nombre, correo, contrasena, institucion, carrera } = req.body;
@@ -47,105 +56,65 @@ exports.registro = async (req, res) => {
 
     const existe = await Usuario.findOne({ correo: correo.toLowerCase() });
     if (existe) {
-      return res.status(409).json({
-        ok: false,
-        mensaje: 'Ya existe una cuenta con ese correo'
-      });
+      return res.status(409).json({ ok: false, mensaje: 'Ya existe una cuenta con ese correo' });
     }
 
-    const usuario = await Usuario.create({
-      nombre,
-      correo,
-      contrasena,
-      institucion,
-      carrera
-    });
-
-    const accessToken = crearAccessToken(usuario);
-    const refreshToken = await crearRefreshToken(usuario._id);
+    const usuario = await Usuario.create({ nombre, correo, contrasena, institucion, carrera });
 
     res.status(201).json({
       ok: true,
       mensaje: 'Usuario registrado correctamente',
-      accessToken,
-      refreshToken,
-      usuario: {
-        id: usuario._id,
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        institucion: usuario.institucion,
-        carrera: usuario.carrera,
-        periodoActual: usuario.periodoActual
-      }
+      accessToken: crearAccessToken(usuario),
+      refreshToken: await crearRefreshToken(usuario._id),
+      usuario: datosUsuario(usuario)
     });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const mensajes = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
-    }
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 2: Login (ahora entrega access token + refresh token)
+// HU02: Login
 exports.login = async (req, res) => {
   try {
     const { correo, contrasena } = req.body;
 
     if (!correo || !contrasena) {
-      return res.status(400).json({
-        ok: false,
-        mensaje: 'Correo y contraseña son obligatorios'
-      });
+      return res.status(400).json({ ok: false, mensaje: 'Correo y contraseña son obligatorios' });
     }
 
     const usuario = await Usuario.findOne({ correo: correo.toLowerCase() });
     if (!usuario) {
-      return res.status(404).json({
-        ok: false,
-        mensaje: 'No existe una cuenta con ese correo'
-      });
+      return res.status(404).json({ ok: false, mensaje: 'No existe una cuenta con ese correo' });
     }
 
     const coincide = await usuario.compararContrasena(contrasena);
     if (!coincide) {
-      return res.status(401).json({
-        ok: false,
-        mensaje: 'Contraseña incorrecta'
-      });
+      return res.status(401).json({ ok: false, mensaje: 'Contraseña incorrecta' });
     }
-
-    const accessToken = crearAccessToken(usuario);
-    const refreshToken = await crearRefreshToken(usuario._id);
 
     res.status(200).json({
       ok: true,
       mensaje: `Hola, ${usuario.nombre}`,
-      accessToken,
-      refreshToken,
-      usuario: {
-        id: usuario._id,
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        periodoActual: usuario.periodoActual
-      }
+      accessToken: crearAccessToken(usuario),
+      refreshToken: await crearRefreshToken(usuario._id),
+      usuario: datosUsuario(usuario)
     });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 11: Completar o editar perfil (PUT)
+// HU11: Completar o editar perfil
 exports.actualizarPerfil = async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, institucion, carrera, periodoActual } = req.body;
-        if (id !== req.usuarioId) {
-      return res.status(403).json({ ok: false, mensaje: 'No puedes editar el perfil de otro usuario' });
-    }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ ok: false, mensaje: 'ID de usuario inválido' });
+    }
+    if (id !== String(req.usuarioId)) {
+      return res.status(403).json({ ok: false, mensaje: 'No puedes editar el perfil de otro usuario' });
     }
 
     const usuario = await Usuario.findById(id);
@@ -157,31 +126,19 @@ exports.actualizarPerfil = async (req, res) => {
     if (institucion !== undefined) usuario.institucion = institucion;
     if (carrera !== undefined) usuario.carrera = carrera;
     if (periodoActual !== undefined) usuario.periodoActual = periodoActual;
-
     await usuario.save();
 
     res.status(200).json({
       ok: true,
       mensaje: 'Perfil actualizado correctamente',
-      usuario: {
-        id: usuario._id,
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        institucion: usuario.institucion,
-        carrera: usuario.carrera,
-        periodoActual: usuario.periodoActual
-      }
+      usuario: datosUsuario(usuario)
     });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const mensajes = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ ok: false, mensaje: mensajes.join(', ') });
-    }
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 16: Renovar tokens con ROTACIÓN del refresh token
+// HU16: Renovar tokens con rotación del refresh token
 exports.refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -190,21 +147,18 @@ exports.refresh = async (req, res) => {
       return res.status(400).json({ ok: false, mensaje: 'El refresh token es obligatorio' });
     }
 
-    // 1. Verificar firma y vigencia del JWT
     try {
       jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     } catch (e) {
       return res.status(401).json({ ok: false, mensaje: 'Refresh token inválido o expirado' });
     }
 
-    // 2. Buscarlo en la base de datos (por su hash)
     const guardado = await RefreshToken.findOne({ tokenHash: hashToken(refreshToken) });
     if (!guardado) {
       return res.status(401).json({ ok: false, mensaje: 'Refresh token no reconocido' });
     }
 
-    // 3. Detección de reutilización: un token ya rotado no puede volver a usarse.
-    //    Si pasa, se asume robo y se cierran todas las sesiones del usuario.
+    // Reutilización de un token ya rotado: se asume robo y se cierran todas las sesiones
     if (guardado.revocado) {
       await RefreshToken.updateMany(
         { usuario: guardado.usuario, revocado: false },
@@ -221,7 +175,7 @@ exports.refresh = async (req, res) => {
       return res.status(401).json({ ok: false, mensaje: 'El usuario no existe' });
     }
 
-    // 4. ROTACIÓN: invalidar el token viejo y emitir uno nuevo de cada tipo
+    // Rotación: se invalida el token viejo y se emite uno nuevo
     const nuevoRefresh = await crearRefreshToken(usuario._id);
     guardado.revocado = true;
     guardado.reemplazadoPor = hashToken(nuevoRefresh);
@@ -234,11 +188,11 @@ exports.refresh = async (req, res) => {
       refreshToken: nuevoRefresh
     });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
   }
 };
 
-// FUNCIONALIDAD 17: Cerrar sesión (revoca el refresh token)
+// HU17: Cerrar sesión
 exports.logout = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -247,13 +201,55 @@ exports.logout = async (req, res) => {
       return res.status(400).json({ ok: false, mensaje: 'El refresh token es obligatorio' });
     }
 
-    await RefreshToken.updateOne(
-      { tokenHash: hashToken(refreshToken) },
-      { revocado: true }
-    );
-
+    await RefreshToken.updateOne({ tokenHash: hashToken(refreshToken) }, { revocado: true });
     res.status(200).json({ ok: true, mensaje: 'Sesión cerrada correctamente' });
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error interno del servidor' });
+    manejarError(res, error);
+  }
+};
+
+// HU18: Ver mi perfil
+exports.miPerfil = async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.usuarioId);
+    if (!usuario) {
+      return res.status(404).json({ ok: false, mensaje: 'El usuario no existe' });
+    }
+    res.status(200).json({ ok: true, usuario: datosUsuario(usuario) });
+  } catch (error) {
+    manejarError(res, error);
+  }
+};
+
+// HU19: Eliminar mi cuenta y todos mis datos
+exports.eliminarCuenta = async (req, res) => {
+  try {
+    const { contrasena } = req.body;
+    if (!contrasena) {
+      return res.status(400).json({ ok: false, mensaje: 'La contraseña es obligatoria para confirmar' });
+    }
+
+    const usuario = await Usuario.findById(req.usuarioId);
+    if (!usuario) {
+      return res.status(404).json({ ok: false, mensaje: 'El usuario no existe' });
+    }
+
+    const coincide = await usuario.compararContrasena(contrasena);
+    if (!coincide) {
+      return res.status(403).json({ ok: false, mensaje: 'Contraseña incorrecta' });
+    }
+
+    await Promise.all([
+      Apunte.deleteMany({ usuario: usuario._id }),
+      Tarea.deleteMany({ usuario: usuario._id }),
+      Nota.deleteMany({ usuario: usuario._id }),
+      Materia.deleteMany({ usuario: usuario._id }),
+      RefreshToken.deleteMany({ usuario: usuario._id })
+    ]);
+    await usuario.deleteOne();
+
+    res.status(200).json({ ok: true, mensaje: 'Cuenta eliminada junto con todos tus datos' });
+  } catch (error) {
+    manejarError(res, error);
   }
 };

@@ -7,11 +7,11 @@ body:
 
     \  \"usuario\": \"6aceddf33147361d21772548\",\r
 
-    \  \"nombre\": \"Filosofía\",\r
+    \  \"nombre\": \"Matematicas\",\r
 
-    \  \"profesor\": \"Prof. Camilo\",\r
+    \  \"profesor\": \"Prof. Adriana\",\r
 
-    \  \"aula\": \"Aula 401\",\r
+    \  \"aula\": \"Aula 205\",\r
 
     \  \"color\": \"#FBBF24\",\r
 
@@ -19,7 +19,7 @@ body:
 
     \  \"horario\": [\r
 
-    \    { \"dia\": \"viernes\", \"horaInicio\": \"8:00\", \"horaFin\": \"10:00\" }\r
+    \    { \"dia\": \"jueves\", \"horaInicio\": \"8:00\", \"horaFin\": \"10:00\" }\r
 
     \  ]\r
 
