@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tareas/pendientes?usuario=6aceddf33147361d21772548"
+method: GET
+queryParams:
+  usuario: 6aceddf33147361d21772548
+order: 8000

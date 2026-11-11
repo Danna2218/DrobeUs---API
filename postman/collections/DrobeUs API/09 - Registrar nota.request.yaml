@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/notas"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"usuario\": \"6aceddf33147361d21772548\",\r
+
+    \  \"materia\": \"6acee2ee650fa3dd90b6917e\",\r
+
+    \  \"descripcion\": \"Parcial\",\r
+
+    \  \"valor\": 4,\r
+
+    \  \"porcentaje\": 50\r
+
+    }\r\n"
+order: 10000

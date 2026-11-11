@@ -9,6 +9,7 @@ const apunteRoutes = require('./routes/apunteRoutes');
 const tareaRoutes = require('./routes/tareaRoutes');
 const agendaRoutes = require('./routes/agendaRoutes');
 const notaRoutes = require('./routes/notaRoutes');
+const verificarToken = require('./middleware/verificarToken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,20 +17,21 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+//Endpoints
 app.get('/', (req, res) => res.json({ mensaje: 'API DrobeUs funcionando' }));
 app.use('/api/auth', authRoutes);
-app.use('/api/materias', materiaRoutes);
-app.use('/api/apuntes', apunteRoutes);
-app.use('/api/tareas', tareaRoutes);
-app.use('/api/agenda', agendaRoutes);
-app.use('/api/notas', notaRoutes);
+app.use('/api/materias', verificarToken, materiaRoutes);
+app.use('/api/apuntes', verificarToken, apunteRoutes);
+app.use('/api/tareas', verificarToken, tareaRoutes);
+app.use('/api/agenda', verificarToken, agendaRoutes);
+app.use('/api/notas', verificarToken, notaRoutes);
 
 // Ruta no encontrada
 app.use((req, res) => {
   res.status(404).json({ ok: false, mensaje: 'Ruta no encontrada' });
 });
 
-// Errores no controlados (por ejemplo, JSON mal formado)
+// Otros Errores 
 app.use((err, req, res, next) => {
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ ok: false, mensaje: 'JSON mal formado' });

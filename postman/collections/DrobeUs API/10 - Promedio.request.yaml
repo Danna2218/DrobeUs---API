@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/notas/promedio?usuario=6aceddf33147361d21772548&periodo=2026-2"
+method: GET
+queryParams:
+  usuario: 6aceddf33147361d21772548
+  periodo: 2026-2
+order: 11000

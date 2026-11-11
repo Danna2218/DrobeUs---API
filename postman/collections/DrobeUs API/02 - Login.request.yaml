@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"correo\": \"danna.jimenez.c@uniautonoma.edu.co\",\r
+
+    \  \"contrasena\": \"123456\"\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "const r = pm.response.json();\r
+
+      if (r.accessToken) {\r
+
+      \  pm.environment.set(\"accessToken\", r.accessToken);\r
+
+      \  pm.environment.set(\"refreshToken\", r.refreshToken);\r
+
+      }"
+    language: text/javascript
+order: 3000

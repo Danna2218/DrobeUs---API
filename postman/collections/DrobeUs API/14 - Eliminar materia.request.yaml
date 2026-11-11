@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/materias/6acee2a7650fa3dd90b69179"
+method: DELETE
+order: 15000

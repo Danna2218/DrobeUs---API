@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/registro"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nombre\": \"Zulema Leon\",\r
+
+    \  \"correo\": \"zulema.leon.r@uniautonoma.edu.co\",\r
+
+    \  \"contrasena\": \"Z45autonoma\",\r
+
+    \  \"institucion\": \"Uniautónoma del Cauca\",\r
+
+    \  \"carrera\": \"Finanzas y Negocios Internacionales\"\r
+
+    }"
+order: 2000

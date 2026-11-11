@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/materias/hoy?usuario=6aceddf33147361d21772548&dia=lunes"
+method: GET
+queryParams:
+  usuario: 6aceddf33147361d21772548
+  dia: lunes
+order: 5000

@@ -1,0 +1,13 @@
+workspace:
+  id: a4424b77-0bf9-4060-87b5-bd9ca5b97458
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/DrobeUs API: 58936912-7ddaf462-eed3-43ea-8899-61ed0e6c25b1
+    ../postman/collections/My Collection: 58936912-42b72072-57f2-4bec-8122-ab880ac1172e
+  environments:
+    ../postman/environments/Render.environment.yaml: 58936912-eb07ed30-4a71-4f9b-93aa-de265cf6fc6f
+  globals:
+    ../postman/globals/workspace.globals.yaml: fb4bc0ea-7e93-4d44-8d99-0e0beaa8ebd8

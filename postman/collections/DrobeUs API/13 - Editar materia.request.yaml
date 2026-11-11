@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/materias/6af1dbdf8c6e5875ecbe3489"
+method: PUT
+body:
+  type: json
+  content: "  {\r
+
+    \    \"nombre\": \"Filosofía 2\",\r
+
+    \    \"aula\": \"Aula 305\"\r
+
+    \  }"
+order: 14000

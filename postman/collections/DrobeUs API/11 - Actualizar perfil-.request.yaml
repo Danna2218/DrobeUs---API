@@ -1,0 +1,16 @@
+$kind: http-request
+name: 11 - Actualizar perfil.
+url: "{{baseUrl}}/api/auth/perfil/6aceddf33147361d21772548"
+method: PUT
+body:
+  type: json
+  content: "   {\r
+
+    \     \"institucion\": \"Uniautónoma del Cauca\",\r
+
+    \     \"carrera\": \"Ingeniería de Sistemas\",\r
+
+    \     \"periodoActual\": \"2026-2\"\r
+
+    \   }"
+order: 12000

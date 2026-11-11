@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tareas"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"usuario\": \"6aceddf33147361d21772548\",\r
+
+    \  \"materia\": \"6acee2a7650fa3dd90b69179\",\r
+
+    \  \"titulo\": \"Parcial 1\",\r
+
+    \  \"tipo\": \"parcial\",\r
+
+    \  \"fechaEntrega\": \"2026-10-17\"\r
+
+    }"
+order: 7000

@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/agenda/semana?usuario=6aceddf33147361d21772548&fecha=2026-10-13"
+method: GET
+queryParams:
+  usuario: 6aceddf33147361d21772548
+  fecha: 2026-10-13
+order: 9000

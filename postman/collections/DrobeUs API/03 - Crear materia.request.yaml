@@ -1,0 +1,27 @@
+$kind: http-request
+url: "{{baseUrl}}/api/materias"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"usuario\": \"6aceddf33147361d21772548\",\r
+
+    \  \"nombre\": \"Filosofía\",\r
+
+    \  \"profesor\": \"Prof. Camilo\",\r
+
+    \  \"aula\": \"Aula 401\",\r
+
+    \  \"color\": \"#FBBF24\",\r
+
+    \  \"periodo\": \"2026-2\",\r
+
+    \  \"horario\": [\r
+
+    \    { \"dia\": \"viernes\", \"horaInicio\": \"8:00\", \"horaFin\": \"10:00\" }\r
+
+    \  ]\r
+
+    }"
+order: 4000
