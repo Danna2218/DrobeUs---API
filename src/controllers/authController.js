@@ -8,6 +8,7 @@ const Apunte = require('../models/Apunte');
 const Tarea = require('../models/Tarea');
 const Nota = require('../models/Nota');
 const manejarError = require('../utils/manejarError');
+const { borrarArchivosDe } = require('../utils/archivos');
 
 const ACCESS_EXPIRA = '15m';
 const REFRESH_DIAS = 7;
@@ -240,6 +241,7 @@ exports.eliminarCuenta = async (req, res) => {
     }
 
     await Promise.all([
+      borrarArchivosDe({ usuario: usuario._id }),
       Apunte.deleteMany({ usuario: usuario._id }),
       Tarea.deleteMany({ usuario: usuario._id }),
       Nota.deleteMany({ usuario: usuario._id }),

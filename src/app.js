@@ -10,6 +10,8 @@ const tareaRoutes = require('./routes/tareaRoutes');
 const agendaRoutes = require('./routes/agendaRoutes');
 const notaRoutes = require('./routes/notaRoutes');
 const verificarToken = require('./middleware/verificarToken');
+const archivoRoutes = require('./routes/archivoRoutes');
+const horarioRoutes = require('./routes/horarioRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,19 +19,17 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const cors = require('cors');
-app.use(cors({
-  origin: ['http://localhost:5173', 'https://TU-FRONTEND.onrender.com']
-}));
-
 // Endpoints
 app.get('/', (req, res) => res.json({ mensaje: 'API DrobeUs funcionando' }));
 app.use('/api/auth', authRoutes);
+app.use('/api/archivos', verificarToken, archivoRoutes);
+app.use('/api/horario', verificarToken, horarioRoutes);
 app.use('/api/materias', verificarToken, materiaRoutes);
 app.use('/api/apuntes', verificarToken, apunteRoutes);
 app.use('/api/tareas', verificarToken, tareaRoutes);
 app.use('/api/agenda', verificarToken, agendaRoutes);
 app.use('/api/notas', verificarToken, notaRoutes);
+
 
 // Ruta no encontrada
 app.use((req, res) => {

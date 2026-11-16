@@ -4,6 +4,7 @@ const Apunte = require('../models/Apunte');
 const Tarea = require('../models/Tarea');
 const Nota = require('../models/Nota');
 const manejarError = require('../utils/manejarError');
+const { borrarArchivosDe } = require('../utils/archivos');
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 const esId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -176,6 +177,7 @@ exports.eliminarMateria = async (req, res) => {
 
     await Promise.all([
       Apunte.deleteMany({ materia: id }),
+      borrarArchivosDe({ materia: id }),
       Tarea.deleteMany({ materia: id }),
       Nota.deleteMany({ materia: id })
     ]);

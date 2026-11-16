@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/horario/analizar"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: archivo
+      src:
+        - /C:/Users/danna/Downloads/H prueba.jpeg
+      description: ""
+      disabled: false
+order: 36000
